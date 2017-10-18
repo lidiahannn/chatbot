@@ -1,4 +1,4 @@
-from numpy import ceil, int32
+import numpy as np
 from collections import Counter
 from tensorflow.contrib.keras.api.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
@@ -64,7 +64,7 @@ class DataManager(object):
         """
         _df = df.copy()
         max_len = df[on].max()
-        self.intervals = {i:(interval_size*(i-1),interval_size*i) for i in range(1, int(ceil(max_len/interval_size))+1)}
+        self.intervals = {i:(interval_size*(i-1),interval_size*i) for i in range(1, int(np.ceil(max_len/interval_size))+1)}
         _df['BUCKET'] = _df[on].apply(lambda x: [i for i,intv in self.intervals.items() if intv[0]<x<=intv[1]][0])
         return _df
 
@@ -106,6 +106,8 @@ class DataManager(object):
         for b,(X,y) in self.ready.items():
             X_size, X_len = X.shape
             y_size, y_len = y.shape
+            xl = np.repeat([X_len, ], self.batch_size).astype('int32')
+            yl = np.repeat([y_len, ], self.batch_size).astype('int32')
             assert X_size==y_size, 'encoder/decoder input size must be same, different in bucket %s.' % b
             size = X_size
             n_batchs = size // self.batch_size if size % self.batch_size == 0 else size // self.batch_size + 1
@@ -118,7 +120,7 @@ class DataManager(object):
                 else:
                     _X = X[current:next_batch]
                     _y = y[current:next_batch]
-                yield _X, int32(X_len), _y, int32(y_len)
+                yield _X, xl, _y, yl, (_y!=0).astype('float32')
                 current = next_batch
 
 
