@@ -91,7 +91,7 @@ class DataManager(object):
                 enc_mlen = max(self.intervals[b])
                 dec_mlen = _df[self.dec_col+'_TL'].max()
                 enc_symbs = pad_sequences(_enc_symbs, maxlen=enc_mlen)
-                dec_symbs = pad_sequences(_dec_symbs, maxlen=dec_mlen)
+                dec_symbs = pad_sequences(_dec_symbs, maxlen=enc_mlen)
                 bucket.update({b: (enc_symbs,dec_symbs)})
         return bucket
 
@@ -106,21 +106,26 @@ class DataManager(object):
         for b,(X,y) in self.ready.items():
             X_size, X_len = X.shape
             y_size, y_len = y.shape
-            xl = np.repeat([X_len, ], self.batch_size).astype('int32')
-            yl = np.repeat([y_len, ], self.batch_size).astype('int32')
+            # xl = np.repeat([X_len, ], self.batch_size).astype('int32')
+            # yl = np.repeat([y_len, ], self.batch_size).astype('int32')
             assert X_size==y_size, 'encoder/decoder input size must be same, different in bucket %s.' % b
             size = X_size
             n_batchs = size // self.batch_size if size % self.batch_size == 0 else size // self.batch_size + 1
+            self.n_batchs = n_batchs
             current = 0
             for i in range(n_batchs):
                 next_batch = self.batch_size * (i + 1)
                 if i == n_batchs - 1:
                     _X = X[current:]
                     _y = y[current:]
+                    _xl = np.repeat([_X.shape[1], ], _X.shape[0]).astype('int32')
+                    _yl = np.repeat([_y.shape[1], ], _y.shape[0]).astype('int32')
                 else:
                     _X = X[current:next_batch]
                     _y = y[current:next_batch]
-                yield _X, xl, _y, yl, (_y!=0).astype('float32')
+                    _xl = np.repeat([_X.shape[1], ], _X.shape[0]).astype('int32')
+                    _yl = np.repeat([_y.shape[1], ], _y.shape[0]).astype('int32')
+                yield _X, _xl, _y, _yl, (_y!=0).astype('float32')
                 current = next_batch
 
 

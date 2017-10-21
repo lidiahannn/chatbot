@@ -1,16 +1,17 @@
 import pandas as pd
 from src.datamanager import DataManager
-
+import numpy as np
 import tensorflow as tf
 from tensorflow.python.layers import core as layers_core
 
 ##########
 # Config
 ##########
-batch_size = 2
+batch_size = 25
 vocab_size = 5000
-embedding_size = 10
-cell_num = 10
+embedding_size = 200
+cell_num = 100
+epochs = 25
 
 
 ##########
@@ -27,8 +28,8 @@ df = dm.initialize(dataset)
 
 train, test = dm.train_test_split(df, test_size=0.2, random_state=None)
 
-gen = dm.batch_gen(train)
-X, xl, y, yl, w = next(gen)
+# gen = dm.batch_gen(train)
+# X, xl, y, yl, w = next(gen)
 
 
 ##########
@@ -44,13 +45,13 @@ target_weight = tf.placeholder(dtype=tf.float32, shape=(None,None), name='w')
 
 
 # Embedding
-embedding_encoder = tf.get_variable("embedding_encoder", [vocab_size, embedding_size])
+embedding_encoder = tf.get_variable("embedding_encoder", [vocab_size+dm.start_idx, embedding_size])
 # here "200" is the imput embedding size.
 # embedding_encoder is weight matrix.
 
 encoder_emb_inp = tf.nn.embedding_lookup(embedding_encoder, inputs)
 
-embedding_decoder = tf.get_variable("embedding_decoder", [vocab_size, embedding_size])
+embedding_decoder = tf.get_variable("embedding_decoder", [vocab_size+dm.start_idx, embedding_size])
 decoder_emb_inp = tf.nn.embedding_lookup(embedding_decoder, inputs)
 
 
@@ -68,21 +69,23 @@ encoder_outputs, encoder_state = tf.nn.dynamic_rnn(encoder_cell, encoder_emb_inp
 # Build RNN cell
 decoder_cell = tf.nn.rnn_cell.BasicLSTMCell(cell_num)
 
+projection_layer = layers_core.Dense(vocab_size+dm.start_idx,use_bias=False)
+#5000 is target lang vocab size, can be defined as a variable, same as source lang vocab in encoder
+
 # Helper
 helper = tf.contrib.seq2seq.TrainingHelper(decoder_emb_inp, decoder_lengths, time_major=False)
 
 # Decoder
-decoder = tf.contrib.seq2seq.BasicDecoder(decoder_cell, helper, encoder_state, output_layer=None)
+decoder = tf.contrib.seq2seq.BasicDecoder(decoder_cell, helper, encoder_state, output_layer=projection_layer)
 
 # Dynamic decoding
 outputs,state,_ = tf.contrib.seq2seq.dynamic_decode(decoder)
 logits = outputs.rnn_output
 
-projection_layer = layers_core.Dense(vocab_size,use_bias=False)
-#5000 is target lang vocab size, can be defined as a variable, same as source lang vocab in encoder
+pred = tf.arg_max(logits, dimension=-1)
 
 # Loss
-crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(labels = decoder_outputs, logits = logits)
+crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=decoder_outputs, logits=logits)
 train_loss = (tf.reduce_sum(crossent * target_weight)/ batch_size)
 
 # Compute and optimize Gradient
@@ -107,14 +110,48 @@ def feed_dict(X, xl, y, yl, w):
 
 init = tf.global_variables_initializer()
 
-sess = tf.InteractiveSession()
-sess.run(init)
+
+with tf.Session() as sess:
+    # Initialize variables
+    sess.run(init)
+
+    for e in range(epochs):
+        print('Epoch %i/%i' %(e+1,epochs))
+        batch_generator = dm.batch_gen(train)
+        epoch_loss = []
+        for i,train_inputs in enumerate(batch_generator):
+            loss,_ = sess.run([train_loss,update_step], feed_dict(*train_inputs))
+            epoch_loss.append(loss)
+        print('Loss: %4.8f' %np.mean(epoch_loss))
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 gen = dm.batch_gen(train)
-train_inputs = next(gen)
+batch = next(gen)
 
-sess.run(outputs, feed_dict=feed_dict(*train_inputs))
+
+d = feed_dict(*batch)
+
+
+# sess = tf.InteractiveSession()
+# sess.run(init)
+#
+#
+# gen = dm.batch_gen(train)
+# train_inputs = next(gen)
+#
+# sess.run(update_step, feed_dict=feed_dict(*train_inputs))
 
 
 
