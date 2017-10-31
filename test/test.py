@@ -28,8 +28,6 @@ df = dm.initialize(dataset)
 
 train, test = dm.train_test_split(df, test_size=0.2, random_state=None)
 
-# gen = dm.batch_gen(train)
-# X, xl, y, yl, w = next(gen)
 
 
 ##########
@@ -46,7 +44,6 @@ target_weight = tf.placeholder(dtype=tf.float32, shape=(None,None), name='w')
 
 # Embedding
 embedding_encoder = tf.get_variable("embedding_encoder", [vocab_size+dm.start_idx, embedding_size])
-# here "200" is the imput embedding size.
 # embedding_encoder is weight matrix.
 
 encoder_emb_inp = tf.nn.embedding_lookup(embedding_encoder, inputs)
@@ -57,9 +54,9 @@ decoder_emb_inp = tf.nn.embedding_lookup(embedding_decoder, inputs)
 
 # Encoder
 # Build RNN cell
-encoder_cell = tf.nn.rnn_cell.BasicLSTMCell(cell_num) #here the "200" is the number of units, it refers to the output embedding size.#
+encoder_cell = tf.nn.rnn_cell.BasicLSTMCell(cell_num)
 
-# Run Dynamix RNN
+# Run Dynamic RNN
 encoder_outputs, encoder_state = tf.nn.dynamic_rnn(encoder_cell, encoder_emb_inp, sequence_length=source_sequence_length,
                                                    dtype=tf.float32, time_major=False)
 
@@ -70,7 +67,6 @@ encoder_outputs, encoder_state = tf.nn.dynamic_rnn(encoder_cell, encoder_emb_inp
 decoder_cell = tf.nn.rnn_cell.BasicLSTMCell(cell_num)
 
 projection_layer = layers_core.Dense(vocab_size+dm.start_idx,use_bias=False)
-#5000 is target lang vocab size, can be defined as a variable, same as source lang vocab in encoder
 
 # Helper
 helper = tf.contrib.seq2seq.TrainingHelper(decoder_emb_inp, decoder_lengths, time_major=False)
@@ -126,6 +122,7 @@ with tf.Session() as sess:
 
 
 
+# To predict open session run pred
 
 
 
@@ -134,14 +131,6 @@ with tf.Session() as sess:
 
 
 
-
-
-
-gen = dm.batch_gen(train)
-batch = next(gen)
-
-
-d = feed_dict(*batch)
 
 
 # sess = tf.InteractiveSession()
