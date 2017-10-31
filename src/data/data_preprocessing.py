@@ -5,8 +5,8 @@ from src.utils import read_data
 
 
 
-enc_data = read_data('data/test.true.a', 'ENCSENTS')
-dec_data = read_data('data/test.true.b', 'DECSENTS')
+enc_data = read_data('data/test.question', 'ENCSENTS')
+dec_data = read_data('data/test.answer', 'DECSENTS')
 
 # enc_data['ENCSLEN'] = enc_data.ENCSENTS.apply(lambda l: len(l.split()))
 # dec_data['DECSLEN'] = dec_data.DECSENTS.apply(lambda l: len(l.split()))
