@@ -1,4 +1,4 @@
-# Chatbot based on seq2seq neural machine translation system.
+# Chatbot based on seq2seq model 
 + Tensorflow 1.3.0
 + Python 3.5
 
