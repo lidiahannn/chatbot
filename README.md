@@ -10,7 +10,7 @@ transition from the encoding to the decoding. The decoder initializes with the l
 the encoder and then predict the corresponding output answer.
 
 ## Dataset
-`data/dataset.csv` A sample of xxx dataset contains conversation between xxx...
+`data/dataset.csv` A sample dataset of movie conversations.
 
 `src.datamanager.DataManager` is used to preprocess data, including: 
 + symbolize tokens: convert tokens (words) into symbols (integers from `0` to `vocab_size`), where `0` stands
@@ -19,7 +19,7 @@ for padding, `1` stands for `sos` (start of sentence), `2` stands for `eos` (end
 outside of this range is considered as `uwk`.
 + bucketing and padding sentences: put sentence with similar length into same bucket and pad to same length
 to avoid unnecessary computation.
-+ iterate dataset for mini-batch training
++ iterate dataset for mini-batch training.
 
 ## Word embedding
 Word embedding is needed to retrieve each of the words in the question and answer data sets. Word vectors are retrieved
